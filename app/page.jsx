@@ -17,45 +17,98 @@ export default function Home() {
 
   const cameraInput = useRef(null);
 
+  function openCamera() {
+    cameraInput.current?.click();
+  }
+
+  function handlePhoto(event) {
+    const file = event.target.files?.[0];
+
+    if (!file) return;
+
+    setImage(file);
+    setPreview(URL.createObjectURL(file));
+    setResult(null);
+  }
+
+  async function analyseFood() {
+    if (!image) return;
+
+    setLoading(true);
+    setResult(null);
+
+    try {
+      const formData = new FormData();
+
+      formData.append("image", image);
+
+      const response = await fetch("/api/analyse", {
+        method: "POST",
+        body: formData,
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Analysis failed");
+      }
+
+      setResult(data);
+    } catch (error) {
+      console.error(error);
+
+      setResult({
+        error: "Couldn't analyse that photo. Try again.",
+      });
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  // =========================
+  // ONBOARDING
+  // =========================
+
   if (!started) {
     return (
       <main style={styles.page}>
-        <div style={styles.container}>
+        <div style={styles.onboarding}>
 
-          <div style={styles.logo}>CAL AI</div>
+          <div style={styles.brand}>CAL AI</div>
 
-          <h1 style={styles.title}>
-            Let’s get started
+          <h1 style={styles.heroTitle}>
+            Let’s get started.
           </h1>
 
-          <p style={styles.subtitle}>
-            Set your goal. We’ll do the rest.
+          <p style={styles.heroSubtitle}>
+            Tell us where you are going.
           </p>
 
-          <h3 style={styles.question}>
-            What’s your goal?
-          </h3>
+          <div style={styles.section}>
+            <div style={styles.label}>
+              What’s your goal?
+            </div>
 
-          <div style={styles.goalGrid}>
-            {[
-              ["lose", "Lose"],
-              ["maintain", "Maintain"],
-              ["gain", "Gain"],
-            ].map(([value, label]) => (
-              <button
-                key={value}
-                onClick={() => setGoal(value)}
-                style={{
-                  ...styles.goalButton,
-                  background: goal === value ? "#111" : "#f6f6f6",
-                  color: goal === value ? "#fff" : "#333",
-                  transform:
-                    goal === value ? "scale(1.02)" : "scale(1)",
-                }}
-              >
-                {label}
-              </button>
-            ))}
+            <div style={styles.goalGrid}>
+              {[
+                ["lose", "Lose"],
+                ["maintain", "Maintain"],
+                ["gain", "Gain"],
+              ].map(([value, label]) => (
+                <button
+                  key={value}
+                  onClick={() => setGoal(value)}
+                  style={{
+                    ...styles.goalButton,
+                    ...(goal === value
+                      ? styles.goalButtonActive
+                      : {}),
+                  }}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
           </div>
 
           <Slider
@@ -89,7 +142,8 @@ export default function Home() {
             onClick={() => setStarted(true)}
             style={styles.startButton}
           >
-            Start →
+            Start
+            <span style={styles.arrow}>→</span>
           </button>
 
         </div>
@@ -97,74 +151,33 @@ export default function Home() {
     );
   }
 
-  function openCamera() {
-    cameraInput.current?.click();
-  }
-
-  function handlePhoto(event) {
-    const file = event.target.files?.[0];
-
-    if (!file) return;
-
-    setImage(file);
-    setPreview(URL.createObjectURL(file));
-    setResult(null);
-  }
-
-  async function analyseFood() {
-    if (!image) return;
-
-    setLoading(true);
-    setResult(null);
-
-    try {
-      const formData = new FormData();
-      formData.append("image", image);
-
-      const response = await fetch("/api", {
-        method: "POST",
-        body: formData,
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error);
-      }
-
-      setResult(data);
-
-    } catch (error) {
-      console.error(error);
-
-      setResult({
-        error: "Couldn't analyse that photo. Try again.",
-      });
-
-    } finally {
-      setLoading(false);
-    }
-  }
+  // =========================
+  // SCANNER
+  // =========================
 
   return (
     <main style={styles.page}>
-      <div style={styles.container}>
+      <div style={styles.scanner}>
 
-        <div style={styles.scannerHeader}>
+        <div style={styles.scannerTop}>
           <div>
-            <div style={styles.smallLogo}>CAL AI</div>
+            <div style={styles.brandSmall}>CAL AI</div>
             <h1 style={styles.scannerTitle}>
               Scan your food
             </h1>
           </div>
 
-          <div style={styles.profileCircle}>
-            {goal === "lose" ? "🔥" : goal === "gain" ? "💪" : "⚖️"}
+          <div style={styles.goalBadge}>
+            {goal === "lose"
+              ? "🔥"
+              : goal === "gain"
+              ? "💪"
+              : "⚖️"}
           </div>
         </div>
 
         <p style={styles.scannerSubtitle}>
-          One photo. Instant nutrition.
+          Take a photo. We’ll do the thinking.
         </p>
 
         <input
@@ -181,17 +194,17 @@ export default function Home() {
             onClick={openCamera}
             style={styles.cameraCard}
           >
-            <div style={styles.cameraGlow}>
-              <div style={styles.cameraIcon}>
-                <div style={styles.cameraLens}></div>
+            <div style={styles.cameraCircle}>
+              <div style={styles.cameraBody}>
+                <div style={styles.cameraLens} />
               </div>
             </div>
 
-            <div style={styles.cameraTitle}>
+            <div style={styles.cameraHeading}>
               Scan meal
             </div>
 
-            <div style={styles.cameraSubtitle}>
+            <div style={styles.cameraHint}>
               Tap to take a photo
             </div>
           </button>
@@ -199,16 +212,16 @@ export default function Home() {
 
         {preview && (
           <>
-            <div style={styles.photoContainer}>
+            <div style={styles.photoWrapper}>
               <img
                 src={preview}
                 alt="Food"
-                style={styles.preview}
+                style={styles.photo}
               />
 
               <button
                 onClick={openCamera}
-                style={styles.retakeButton}
+                style={styles.retake}
               >
                 ↻
               </button>
@@ -217,22 +230,23 @@ export default function Home() {
             {!loading && !result && (
               <button
                 onClick={analyseFood}
-                style={styles.analyseButton}
+                style={styles.analyse}
               >
-                Analyse meal →
+                Analyse meal
+                <span>→</span>
               </button>
             )}
           </>
         )}
 
         {loading && (
-          <div style={styles.loadingCard}>
-            <div style={styles.loadingIcon}>✦</div>
+          <div style={styles.loading}>
+            <div style={styles.loadingSymbol}>✦</div>
 
             <strong>Analysing your meal</strong>
 
             <span>
-              Estimating calories & macros...
+              Estimating calories and macros...
             </span>
           </div>
         )}
@@ -240,13 +254,13 @@ export default function Home() {
         {result && !result.error && (
           <div style={styles.result}>
 
-            <div style={styles.resultTop}>
+            <div style={styles.resultHeader}>
               <div>
-                <span style={styles.resultLabel}>
+                <div style={styles.resultEyebrow}>
                   YOUR MEAL
-                </span>
+                </div>
 
-                <h2 style={{ margin: "5px 0 0" }}>
+                <h2 style={styles.mealName}>
                   {result.meal_name}
                 </h2>
               </div>
@@ -280,23 +294,29 @@ export default function Home() {
 
             </div>
 
-            <div style={styles.itemsTitle}>
-              FOOD
-            </div>
+            {result.items?.length > 0 && (
+              <>
+                <div style={styles.itemsLabel}>
+                  FOOD
+                </div>
 
-            {result.items?.map((item, index) => (
-              <div
-                key={index}
-                style={styles.item}
-              >
-                <span>{item.name}</span>
-                <strong>{item.calories} kcal</strong>
-              </div>
-            ))}
+                {result.items.map((item, index) => (
+                  <div
+                    key={index}
+                    style={styles.foodItem}
+                  >
+                    <span>{item.name}</span>
+                    <strong>
+                      {item.calories} kcal
+                    </strong>
+                  </div>
+                ))}
+              </>
+            )}
 
             <button
               onClick={openCamera}
-              style={styles.secondaryButton}
+              style={styles.scanAgain}
             >
               Scan another meal
             </button>
@@ -315,6 +335,11 @@ export default function Home() {
   );
 }
 
+
+// =========================
+// SLIDER
+// =========================
+
 function Slider({
   title,
   value,
@@ -324,7 +349,7 @@ function Slider({
   setValue,
 }) {
   return (
-    <div style={styles.sliderContainer}>
+    <div style={styles.sliderBlock}>
 
       <div style={styles.sliderHeader}>
         <span>{title}</span>
@@ -349,6 +374,11 @@ function Slider({
   );
 }
 
+
+// =========================
+// MACRO
+// =========================
+
 function Macro({ value, label }) {
   return (
     <div style={styles.macro}>
@@ -358,83 +388,107 @@ function Macro({ value, label }) {
   );
 }
 
-const styles = {
 
+// =========================
+// STYLES
+// =========================
+
+const styles = {
   page: {
     minHeight: "100vh",
     background: "#f7f7f5",
-    padding: "30px 20px",
-    display: "flex",
-    justifyContent: "center",
+    padding: "28px 20px",
     fontFamily:
       "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
     color: "#111",
+    boxSizing: "border-box",
   },
 
-  container: {
+  onboarding: {
     width: "100%",
     maxWidth: "430px",
+    margin: "0 auto",
+    paddingTop: "20px",
   },
 
-  logo: {
+  scanner: {
+    width: "100%",
+    maxWidth: "430px",
+    margin: "0 auto",
+  },
+
+  brand: {
     textAlign: "center",
-    fontSize: "13px",
+    fontSize: "12px",
     fontWeight: "900",
-    letterSpacing: "2px",
-    marginBottom: "35px",
+    letterSpacing: "3px",
+    marginBottom: "55px",
   },
 
-  smallLogo: {
+  brandSmall: {
     fontSize: "11px",
     fontWeight: "900",
     letterSpacing: "2px",
-    color: "#888",
-    marginBottom: "5px",
+    color: "#999",
+    marginBottom: "7px",
   },
 
-  title: {
-    fontSize: "36px",
-    lineHeight: "1.05",
+  heroTitle: {
+    fontSize: "39px",
+    lineHeight: "1",
+    letterSpacing: "-2px",
     textAlign: "center",
-    margin: "0 0 10px",
-    letterSpacing: "-1.5px",
+    margin: 0,
   },
 
-  subtitle: {
+  heroSubtitle: {
     textAlign: "center",
     color: "#888",
     fontSize: "15px",
-    marginBottom: "42px",
+    marginTop: "12px",
+    marginBottom: "48px",
   },
 
-  question: {
-    marginBottom: "12px",
-    fontSize: "16px",
+  section: {
+    marginBottom: "28px",
+  },
+
+  label: {
+    fontSize: "15px",
+    fontWeight: "700",
+    marginBottom: "11px",
   },
 
   goalGrid: {
     display: "grid",
     gridTemplateColumns: "repeat(3, 1fr)",
     gap: "8px",
-    marginBottom: "32px",
   },
 
   goalButton: {
-    padding: "15px 5px",
-    borderRadius: "14px",
     border: "none",
+    borderRadius: "14px",
+    padding: "16px 5px",
+    background: "#ededeb",
+    color: "#333",
+    fontSize: "14px",
     fontWeight: "700",
     cursor: "pointer",
-    transition: "0.15s",
   },
 
-  sliderContainer: {
-    marginBottom: "25px",
+  goalButtonActive: {
+    background: "#111",
+    color: "#fff",
+  },
+
+  sliderBlock: {
+    marginBottom: "27px",
   },
 
   sliderHeader: {
     display: "flex",
     justifyContent: "space-between",
+    alignItems: "center",
     marginBottom: "9px",
     fontSize: "14px",
   },
@@ -443,196 +497,225 @@ const styles = {
     width: "100%",
     height: "5px",
     accentColor: "#111",
+    cursor: "pointer",
   },
 
   startButton: {
     width: "100%",
-    padding: "18px",
-    marginTop: "8px",
-    borderRadius: "16px",
     border: "none",
+    borderRadius: "16px",
     background: "#111",
     color: "#fff",
+    padding: "18px",
+    marginTop: "7px",
     fontSize: "17px",
     fontWeight: "800",
     cursor: "pointer",
   },
 
-  scannerHeader: {
+  arrow: {
+    marginLeft: "8px",
+    fontSize: "20px",
+  },
+
+  scannerTop: {
     display: "flex",
     justifyContent: "space-between",
     alignItems: "center",
   },
 
   scannerTitle: {
+    margin: 0,
     fontSize: "32px",
     lineHeight: "1",
-    margin: 0,
-    letterSpacing: "-1px",
+    letterSpacing: "-1.5px",
   },
 
-  profileCircle: {
-    width: "45px",
-    height: "45px",
+  goalBadge: {
+    width: "46px",
+    height: "46px",
     borderRadius: "50%",
     background: "#fff",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    boxShadow: "0 4px 20px rgba(0,0,0,0.06)",
     fontSize: "19px",
+    boxShadow: "0 4px 20px rgba(0,0,0,0.06)",
   },
 
   scannerSubtitle: {
     color: "#888",
-    margin: "12px 0 25px",
+    fontSize: "15px",
+    marginTop: "11px",
+    marginBottom: "25px",
   },
 
   cameraCard: {
     width: "100%",
-    height: "390px",
-    borderRadius: "30px",
+    height: "410px",
     border: "none",
-    background: "#111",
+    borderRadius: "30px",
+    background:
+      "linear-gradient(145deg, #171717, #050505)",
     color: "#fff",
     cursor: "pointer",
-    position: "relative",
-    overflow: "hidden",
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    justifyContent: "center",
+    boxShadow: "0 20px 50px rgba(0,0,0,0.12)",
   },
 
-  cameraGlow: {
-    width: "190px",
-    height: "190px",
+  cameraCircle: {
+    width: "185px",
+    height: "185px",
     borderRadius: "50%",
-    margin: "0 auto 30px",
     background:
-      "radial-gradient(circle, #ffffff 0%, #d9d9d9 45%, #444 100%)",
+      "radial-gradient(circle at 35% 30%, #fff, #d9d9d9 45%, #777)",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
     boxShadow:
-      "0 0 80px rgba(255,255,255,0.12)",
+      "0 0 70px rgba(255,255,255,0.12)",
+    marginBottom: "28px",
   },
 
-  cameraIcon: {
-    width: "86px",
-    height: "64px",
-    borderRadius: "18px",
+  cameraBody: {
+    width: "88px",
+    height: "65px",
+    borderRadius: "17px",
     background: "#111",
     position: "relative",
   },
 
   cameraLens: {
+    position: "absolute",
     width: "31px",
     height: "31px",
     borderRadius: "50%",
     border: "5px solid #fff",
-    position: "absolute",
-    top: "16px",
-    left: "27px",
+    left: "23px",
+    top: "12px",
+    boxSizing: "border-box",
   },
 
-  cameraTitle: {
+  cameraHeading: {
     fontSize: "24px",
-    fontWeight: "800",
+    fontWeight: "850",
   },
 
-  cameraSubtitle: {
-    color: "#aaa",
-    marginTop: "7px",
+  cameraHint: {
+    marginTop: "8px",
     fontSize: "14px",
+    color: "#999",
   },
 
-  photoContainer: {
+  photoWrapper: {
     position: "relative",
   },
 
-  preview: {
+  photo: {
     width: "100%",
-    maxHeight: "500px",
+    maxHeight: "520px",
     objectFit: "cover",
     borderRadius: "25px",
     display: "block",
   },
 
-  retakeButton: {
+  retake: {
     position: "absolute",
-    right: "15px",
-    bottom: "15px",
-    width: "45px",
-    height: "45px",
+    right: "14px",
+    bottom: "14px",
+    width: "46px",
+    height: "46px",
     borderRadius: "50%",
     border: "none",
     background: "rgba(0,0,0,0.75)",
     color: "#fff",
     fontSize: "23px",
+    cursor: "pointer",
   },
 
-  analyseButton: {
+  analyse: {
     width: "100%",
-    padding: "18px",
     marginTop: "14px",
+    padding: "18px",
     borderRadius: "16px",
     border: "none",
     background: "#111",
     color: "#fff",
     fontSize: "17px",
     fontWeight: "800",
+    display: "flex",
+    justifyContent: "center",
+    gap: "10px",
+    cursor: "pointer",
   },
 
-  loadingCard: {
+  loading: {
     marginTop: "18px",
-    padding: "24px",
+    padding: "25px",
     borderRadius: "20px",
     background: "#fff",
     display: "flex",
     flexDirection: "column",
     alignItems: "center",
-    gap: "7px",
+    gap: "6px",
+    boxShadow: "0 5px 25px rgba(0,0,0,0.04)",
   },
 
-  loadingIcon: {
-    fontSize: "28px",
+  loadingSymbol: {
+    fontSize: "27px",
     marginBottom: "5px",
   },
 
   result: {
-    marginTop: "22px",
+    marginTop: "20px",
     padding: "23px",
     borderRadius: "24px",
     background: "#fff",
-    boxShadow: "0 5px 30px rgba(0,0,0,0.05)",
+    boxShadow: "0 8px 35px rgba(0,0,0,0.05)",
   },
 
-  resultTop: {
+  resultHeader: {
     display: "flex",
     justifyContent: "space-between",
     alignItems: "center",
   },
 
-  resultLabel: {
+  resultEyebrow: {
     fontSize: "10px",
+    fontWeight: "900",
     letterSpacing: "1.5px",
-    fontWeight: "800",
     color: "#999",
   },
 
+  mealName: {
+    fontSize: "21px",
+    margin: "5px 0 0",
+  },
+
   check: {
-    width: "35px",
-    height: "35px",
+    width: "36px",
+    height: "36px",
     borderRadius: "50%",
     background: "#111",
     color: "#fff",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
+    fontWeight: "800",
   },
 
   calories: {
-    fontSize: "42px",
+    fontSize: "43px",
     fontWeight: "900",
     letterSpacing: "-2px",
     margin: "22px 0",
+  },
+
+  caloriesUnit: {
+    fontSize: "17px",
   },
 
   macros: {
@@ -644,14 +727,23 @@ const styles = {
   macro: {
     background: "#f7f7f5",
     borderRadius: "14px",
-    padding: "13px 5px",
-    textAlign: "center",
+    padding: "14px 5px",
     display: "flex",
     flexDirection: "column",
+    alignItems: "center",
     gap: "3px",
   },
 
-  item: {
+  itemsLabel: {
+    fontSize: "10px",
+    fontWeight: "900",
+    letterSpacing: "1.5px",
+    color: "#999",
+    marginTop: "25px",
+    marginBottom: "3px",
+  },
+
+  foodItem: {
     display: "flex",
     justifyContent: "space-between",
     padding: "12px 0",
@@ -659,15 +751,7 @@ const styles = {
     fontSize: "14px",
   },
 
-  itemsTitle: {
-    fontSize: "10px",
-    letterSpacing: "1.5px",
-    fontWeight: "800",
-    color: "#999",
-    marginTop: "25px",
-  },
-
-  secondaryButton: {
+  scanAgain: {
     width: "100%",
     padding: "15px",
     marginTop: "20px",
@@ -675,6 +759,7 @@ const styles = {
     border: "1px solid #ddd",
     background: "#fff",
     fontWeight: "700",
+    cursor: "pointer",
   },
 
   error: {
@@ -682,6 +767,7 @@ const styles = {
     padding: "15px",
     borderRadius: "15px",
     background: "#fff0f0",
+    color: "#b00020",
     textAlign: "center",
   },
 };
