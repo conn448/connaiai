@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 
 export default function Home() {
   const [started, setStarted] = useState(false);
@@ -15,8 +15,10 @@ export default function Home() {
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
 
+  const cameraInput = useRef(null);
+
   // -------------------------
-  // SETUP
+  // ONBOARDING
   // -------------------------
 
   if (!started) {
@@ -43,10 +45,8 @@ export default function Home() {
                 onClick={() => setGoal(value)}
                 style={{
                   ...styles.goalButton,
-                  background:
-                    goal === value ? "#000" : "#fff",
-                  color:
-                    goal === value ? "#fff" : "#000",
+                  background: goal === value ? "#000" : "#fff",
+                  color: goal === value ? "#fff" : "#000",
                 }}
               >
                 {label}
@@ -94,10 +94,14 @@ export default function Home() {
   }
 
   // -------------------------
-  // SCANNER
+  // CAMERA
   // -------------------------
 
-  function handleImage(event) {
+  function openCamera() {
+    cameraInput.current?.click();
+  }
+
+  function handlePhoto(event) {
     const file = event.target.files?.[0];
 
     if (!file) return;
@@ -126,7 +130,7 @@ export default function Home() {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || "Analysis failed");
+        throw new Error(data.error);
       }
 
       setResult(data);
@@ -147,75 +151,91 @@ export default function Home() {
     <main style={styles.page}>
       <div style={styles.container}>
 
-        <h1 style={styles.title}>What did you eat?</h1>
+        <h1 style={styles.title}>Scan your food</h1>
 
         <p style={styles.subtitle}>
-          Take a photo and we’ll work it out.
+          Take a photo. We'll work out the nutrition.
         </p>
 
-        <label style={styles.uploadButton}>
-          📸 Choose food photo
-          <input
-            type="file"
-            accept="image/*"
-            capture="environment"
-            onChange={handleImage}
-            style={{ display: "none" }}
-          />
-        </label>
+        {/* Hidden camera input */}
+        <input
+          ref={cameraInput}
+          type="file"
+          accept="image/*"
+          capture="environment"
+          onChange={handlePhoto}
+          style={{ display: "none" }}
+        />
 
-        {preview && (
-          <img
-            src={preview}
-            alt="Food"
-            style={styles.preview}
-          />
-        )}
-
-        {image && !loading && (
+        {/* CAMERA */}
+        {!preview && (
           <button
-            onClick={analyseFood}
-            style={styles.startButton}
+            onClick={openCamera}
+            style={styles.cameraButton}
           >
-            Calculate
+            <div style={styles.cameraIcon}>📷</div>
+            <div>Scan food</div>
           </button>
         )}
 
-        {loading && (
-          <p style={styles.loading}>
-            Analysing your food...
-          </p>
+        {/* PHOTO PREVIEW */}
+        {preview && (
+          <>
+            <img
+              src={preview}
+              alt="Food"
+              style={styles.preview}
+            />
+
+            {!loading && !result && (
+              <button
+                onClick={analyseFood}
+                style={styles.startButton}
+              >
+                Analyse
+              </button>
+            )}
+          </>
         )}
 
+        {loading && (
+          <div style={styles.loading}>
+            <div style={{ fontSize: "30px" }}>◌</div>
+            Analysing your food...
+          </div>
+        )}
+
+        {/* RESULT */}
         {result && !result.error && (
           <div style={styles.result}>
 
             <h2>{result.meal_name}</h2>
 
-            <div style={styles.bigNumber}>
-              {result.calories} kcal
+            <div style={styles.calories}>
+              {result.calories}
+              <span> kcal</span>
             </div>
 
             <div style={styles.macros}>
 
-              <div>
-                <strong>{result.protein_g}g</strong>
-                <span>Protein</span>
-              </div>
+              <Macro
+                value={result.protein_g}
+                label="Protein"
+              />
 
-              <div>
-                <strong>{result.carbs_g}g</strong>
-                <span>Carbs</span>
-              </div>
+              <Macro
+                value={result.carbs_g}
+                label="Carbs"
+              />
 
-              <div>
-                <strong>{result.fat_g}g</strong>
-                <span>Fat</span>
-              </div>
+              <Macro
+                value={result.fat_g}
+                label="Fat"
+              />
 
             </div>
 
-            <h3>Food</h3>
+            <h3>Items</h3>
 
             {result.items?.map((item, index) => (
               <div
@@ -227,13 +247,20 @@ export default function Home() {
               </div>
             ))}
 
+            <button
+              onClick={openCamera}
+              style={styles.secondaryButton}
+            >
+              Scan another
+            </button>
+
           </div>
         )}
 
         {result?.error && (
-          <p style={styles.error}>
+          <div style={styles.error}>
             {result.error}
-          </p>
+          </div>
         )}
 
       </div>
@@ -276,6 +303,20 @@ function Slider({
         style={styles.slider}
       />
 
+    </div>
+  );
+}
+
+
+// -------------------------
+// MACRO
+// -------------------------
+
+function Macro({ value, label }) {
+  return (
+    <div style={styles.macro}>
+      <strong>{value}g</strong>
+      <span>{label}</span>
     </div>
   );
 }
@@ -325,7 +366,6 @@ const styles = {
     borderRadius: "12px",
     border: "1px solid #ddd",
     fontWeight: "600",
-    cursor: "pointer",
   },
 
   sliderContainer: {
@@ -352,41 +392,45 @@ const styles = {
     color: "#fff",
     fontSize: "18px",
     fontWeight: "700",
-    cursor: "pointer",
   },
 
-  uploadButton: {
-    display: "block",
-    textAlign: "center",
-    padding: "18px",
-    borderRadius: "14px",
-    border: "1px solid #ddd",
+  cameraButton: {
+    width: "100%",
+    height: "260px",
+    borderRadius: "24px",
+    border: "2px dashed #ccc",
+    background: "#fafafa",
+    fontSize: "20px",
     fontWeight: "700",
-    cursor: "pointer",
+  },
+
+  cameraIcon: {
+    fontSize: "60px",
+    marginBottom: "15px",
   },
 
   preview: {
     width: "100%",
-    marginTop: "20px",
-    borderRadius: "16px",
-    maxHeight: "400px",
+    maxHeight: "450px",
     objectFit: "cover",
+    borderRadius: "20px",
   },
 
   loading: {
     textAlign: "center",
-    marginTop: "24px",
+    marginTop: "30px",
+    color: "#666",
   },
 
   result: {
-    marginTop: "28px",
+    marginTop: "25px",
     padding: "22px",
-    borderRadius: "18px",
+    borderRadius: "20px",
     background: "#f5f5f5",
   },
 
-  bigNumber: {
-    fontSize: "32px",
+  calories: {
+    fontSize: "38px",
     fontWeight: "800",
     margin: "15px 0 25px",
   },
@@ -394,21 +438,39 @@ const styles = {
   macros: {
     display: "grid",
     gridTemplateColumns: "repeat(3, 1fr)",
-    textAlign: "center",
+    gap: "10px",
     marginBottom: "25px",
+  },
+
+  macro: {
+    textAlign: "center",
+    padding: "12px 5px",
+    background: "#fff",
+    borderRadius: "12px",
   },
 
   item: {
     display: "flex",
     justifyContent: "space-between",
-    padding: "10px 0",
+    padding: "11px 0",
     borderBottom: "1px solid #ddd",
+  },
+
+  secondaryButton: {
+    width: "100%",
+    padding: "14px",
+    marginTop: "20px",
+    borderRadius: "12px",
+    border: "1px solid #ddd",
+    background: "#fff",
+    fontWeight: "700",
   },
 
   error: {
     marginTop: "20px",
-    color: "red",
+    padding: "15px",
+    borderRadius: "12px",
+    background: "#fee",
     textAlign: "center",
   },
-
 };
