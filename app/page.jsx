@@ -3,382 +3,136 @@
 import { useState } from "react";
 
 export default function Home() {
-  const [image, setImage] = useState(null);
-  const [preview, setPreview] = useState("");
-  const [result, setResult] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+  const [goal, setGoal] = useState("lose");
+  const [weight, setWeight] = useState(78);
+  const [goalWeight, setGoalWeight] = useState(70);
+  const [height, setHeight] = useState(180);
 
-  function handlePhoto(e) {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  const start = () => {
+    // For now, just confirm the setup.
+    // Later this will take the user into the food scanner.
+    console.log({
+      goal,
+      weight,
+      goalWeight,
+      height,
+    });
 
-    setImage(file);
-    setPreview(URL.createObjectURL(file));
-    setResult(null);
-    setError("");
-  }
-
-  async function analyse() {
-    if (!image) return;
-
-    setLoading(true);
-    setError("");
-
-    try {
-      const form = new FormData();
-      form.append("image", image);
-
-      const response = await fetch("/api/analyze", {
-        method: "POST",
-        body: form
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || "Something went wrong");
-      }
-
-      setResult(data);
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
-  }
+    alert("You're all set!");
+  };
 
   return (
-    <main style={styles.page}>
-      <div style={styles.container}>
+    <main className="min-h-screen bg-white flex items-center justify-center px-5">
+      <div className="w-full max-w-md">
 
-        <div style={styles.header}>
-          <strong style={styles.logo}>CONN<span> AI</span></strong>
-          <span style={styles.today}>TODAY</span>
+        <h1 className="text-3xl font-bold text-center mb-2">
+          Let's get started
+        </h1>
+
+        <p className="text-gray-500 text-center mb-8">
+          Set your goal. We'll do the rest.
+        </p>
+
+        {/* Goal */}
+        <div className="mb-8">
+          <h2 className="font-semibold mb-3">What’s your goal?</h2>
+
+          <div className="grid grid-cols-3 gap-2">
+            {[
+              ["lose", "Lose"],
+              ["maintain", "Maintain"],
+              ["gain", "Gain"],
+            ].map(([value, label]) => (
+              <button
+                key={value}
+                onClick={() => setGoal(value)}
+                className={`py-3 rounded-xl border font-medium transition ${
+                  goal === value
+                    ? "bg-black text-white border-black"
+                    : "bg-white text-gray-700 border-gray-200"
+                }`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
         </div>
 
-        {!result ? (
-          <section style={styles.hero}>
+        {/* Current weight */}
+        <Slider
+          label="Current weight"
+          value={weight}
+          min={40}
+          max={150}
+          unit="kg"
+          onChange={setWeight}
+        />
 
-            <div style={styles.eyebrow}>AI NUTRITION</div>
+        {/* Goal weight */}
+        <Slider
+          label="Goal weight"
+          value={goalWeight}
+          min={40}
+          max={150}
+          unit="kg"
+          onChange={setGoalWeight}
+        />
 
-            <h1 style={styles.title}>
-              Know what<br />
-              you’re eating.
-            </h1>
+        {/* Height */}
+        <Slider
+          label="Height"
+          value={height}
+          min={140}
+          max={220}
+          unit="cm"
+          onChange={setHeight}
+        />
 
-            <p style={styles.subtitle}>
-              Take a photo. Get your nutrition in seconds.
-            </p>
-
-            {preview && (
-              <img
-                src={preview}
-                alt="Food"
-                style={styles.preview}
-              />
-            )}
-
-            {!preview && (
-              <label style={styles.button}>
-                📷 &nbsp; Scan my food
-                <input
-                  type="file"
-                  accept="image/*"
-                  capture="environment"
-                  onChange={handlePhoto}
-                  hidden
-                />
-              </label>
-            )}
-
-            {preview && !loading && (
-              <button
-                onClick={analyse}
-                style={styles.button}
-              >
-                Analyse my food
-              </button>
-            )}
-
-            {loading && (
-              <div style={styles.loading}>
-                Looking at your food…
-              </div>
-            )}
-
-            {error && (
-              <div style={styles.error}>
-                {error}
-              </div>
-            )}
-
-          </section>
-        ) : (
-
-          <section style={styles.result}>
-
-            <img
-              src={preview}
-              alt="Your meal"
-              style={styles.resultImage}
-            />
-
-            <div style={styles.eyebrow}>
-              YOUR MEAL
-            </div>
-
-            <h2 style={styles.mealName}>
-              {result.meal_name}
-            </h2>
-
-            <div style={styles.calories}>
-              {Math.round(result.calories)}
-              <span> kcal</span>
-            </div>
-
-            <div style={styles.macros}>
-
-              <Macro
-                value={result.protein_g}
-                label="PROTEIN"
-              />
-
-              <Macro
-                value={result.carbs_g}
-                label="CARBS"
-              />
-
-              <Macro
-                value={result.fat_g}
-                label="FAT"
-              />
-
-            </div>
-
-            <div style={styles.items}>
-              {result.items?.map((item, index) => (
-                <div
-                  key={index}
-                  style={styles.item}
-                >
-                  <span>{item.name}</span>
-                  <strong>{Math.round(item.calories)} kcal</strong>
-                </div>
-              ))}
-            </div>
-
-            <button style={styles.button}>
-              + &nbsp; Log meal
-            </button>
-
-            <div style={styles.future}>
-
-              <div style={styles.futureTitle}>
-                COMING NEXT
-              </div>
-
-              <div style={styles.futureOption}>
-                🍽️ &nbsp; What should I eat next?
-              </div>
-
-              <div style={styles.futureOption}>
-                🛒 &nbsp; Build my shopping list
-              </div>
-
-              <div style={styles.futureOption}>
-                🎯 &nbsp; Help me hit my goal
-              </div>
-
-            </div>
-
-          </section>
-
-        )}
+        {/* Start */}
+        <button
+          onClick={start}
+          className="w-full bg-black text-white py-4 rounded-2xl font-bold text-lg mt-6"
+        >
+          Start
+        </button>
 
       </div>
     </main>
   );
 }
 
-function Macro({ value, label }) {
+function Slider({
+  label,
+  value,
+  min,
+  max,
+  unit,
+  onChange,
+}: {
+  label: string;
+  value: number;
+  min: number;
+  max: number;
+  unit: string;
+  onChange: (value: number) => void;
+}) {
   return (
-    <div style={styles.macro}>
-      <strong>{Math.round(value)}g</strong>
-      <span>{label}</span>
+    <div className="mb-7">
+      <div className="flex justify-between items-center mb-2">
+        <span className="font-semibold">{label}</span>
+        <span className="font-bold text-lg">
+          {value} {unit}
+        </span>
+      </div>
+
+      <input
+        type="range"
+        min={min}
+        max={max}
+        value={value}
+        onChange={(e) => onChange(Number(e.target.value))}
+        className="w-full accent-black"
+      />
     </div>
   );
 }
-
-const styles = {
-  page: {
-    minHeight: "100vh",
-    background: "#f6f6f3",
-    color: "#111",
-    fontFamily:
-      "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif"
-  },
-
-  container: {
-    maxWidth: "520px",
-    margin: "0 auto",
-    padding: "22px 20px 50px"
-  },
-
-  header: {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center"
-  },
-
-  logo: {
-    fontSize: "20px",
-    letterSpacing: "-1px"
-  },
-
-  today: {
-    fontSize: "10px",
-    letterSpacing: "2px",
-    color: "#888",
-    fontWeight: "700"
-  },
-
-  hero: {
-    paddingTop: "75px"
-  },
-
-  eyebrow: {
-    fontSize: "10px",
-    letterSpacing: "2px",
-    color: "#888",
-    fontWeight: "800",
-    marginBottom: "15px"
-  },
-
-  title: {
-    fontSize: "50px",
-    lineHeight: "0.95",
-    letterSpacing: "-3px",
-    margin: "0 0 20px"
-  },
-
-  subtitle: {
-    fontSize: "18px",
-    lineHeight: "1.4",
-    color: "#666",
-    marginBottom: "32px"
-  },
-
-  preview: {
-    width: "100%",
-    aspectRatio: "1",
-    objectFit: "cover",
-    borderRadius: "24px",
-    marginBottom: "16px"
-  },
-
-  button: {
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    width: "100%",
-    minHeight: "60px",
-    border: "none",
-    borderRadius: "18px",
-    background: "#111",
-    color: "white",
-    fontSize: "16px",
-    fontWeight: "800",
-    cursor: "pointer"
-  },
-
-  loading: {
-    textAlign: "center",
-    marginTop: "20px",
-    color: "#666",
-    fontWeight: "600"
-  },
-
-  error: {
-    marginTop: "15px",
-    padding: "14px",
-    borderRadius: "14px",
-    background: "#ffe8e8",
-    color: "#a00000"
-  },
-
-  result: {
-    paddingTop: "30px"
-  },
-
-  resultImage: {
-    width: "100%",
-    height: "250px",
-    objectFit: "cover",
-    borderRadius: "24px",
-    marginBottom: "30px"
-  },
-
-  mealName: {
-    fontSize: "32px",
-    letterSpacing: "-1.5px",
-    margin: "0 0 15px"
-  },
-
-  calories: {
-    fontSize: "64px",
-    fontWeight: "900",
-    letterSpacing: "-4px"
-  },
-
-  macros: {
-    display: "grid",
-    gridTemplateColumns: "repeat(3, 1fr)",
-    gap: "10px",
-    margin: "28px 0"
-  },
-
-  macro: {
-    background: "white",
-    borderRadius: "16px",
-    padding: "16px"
-  },
-
-  macro: {
-    background: "white",
-    borderRadius: "16px",
-    padding: "16px"
-  },
-
-  item: {
-    display: "flex",
-    justifyContent: "space-between",
-    padding: "15px 0",
-    borderBottom: "1px solid #ddd",
-    fontSize: "14px"
-  },
-
-  items: {
-    marginBottom: "20px"
-  },
-
-  future: {
-    marginTop: "35px"
-  },
-
-  futureTitle: {
-    fontSize: "10px",
-    letterSpacing: "1.5px",
-    color: "#888",
-    fontWeight: "800",
-    marginBottom: "10px"
-  },
-
-  futureOption: {
-    background: "white",
-    borderRadius: "14px",
-    padding: "16px",
-    marginTop: "8px",
-    fontWeight: "700"
-  }
-};
