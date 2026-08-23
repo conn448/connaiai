@@ -26,7 +26,7 @@ export async function POST(request) {
     const mimeType = image.type || "image/jpeg";
 
     const openai = new OpenAI({
-      apiKey: process.env.OPENAI_API_KEY
+      apiKey: process.env.OPENAI_API_KEY,
     });
 
     const response = await openai.responses.create({
@@ -38,11 +38,13 @@ export async function POST(request) {
             {
               type: "input_text",
               text: `
-You are the nutrition engine for Conn AI.
+You are a nutrition analysis engine.
 
 Analyse the food in this photograph.
 
-Identify the meal and visible food items and estimate:
+Identify the meal and visible food items.
+
+Estimate:
 - total calories
 - protein in grams
 - carbohydrates in grams
@@ -51,9 +53,9 @@ Identify the meal and visible food items and estimate:
 Give ONE best estimate rather than a range.
 
 Infer sensible portion sizes from the image.
-Account for visible sauces, oils and cooking methods where appropriate.
+Account for visible sauces, oils and cooking methods.
 
-Return ONLY valid JSON in exactly this format:
+Return ONLY valid JSON:
 
 {
   "meal_name": "short meal name",
@@ -68,15 +70,15 @@ Return ONLY valid JSON in exactly this format:
     }
   ]
 }
-`
+`,
             },
             {
               type: "input_image",
-              image_url: `data:${mimeType};base64,${base64}`
-            }
-          ]
-        }
-      ]
+              image_url: `data:${mimeType};base64,${base64}`,
+            },
+          ],
+        },
+      ],
     });
 
     const text = response.output_text
@@ -89,10 +91,12 @@ Return ONLY valid JSON in exactly this format:
     return Response.json(result);
 
   } catch (error) {
-    console.error(error);
+    console.error("Nutrition API error:", error);
 
     return Response.json(
-      { error: "Couldn't analyse that photo. Try again." },
+      {
+        error: "Couldn't analyse that photo. Try again.",
+      },
       { status: 500 }
     );
   }
