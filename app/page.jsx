@@ -9,58 +9,71 @@ export default function Home() {
   const [height, setHeight] = useState(180);
 
   return (
-    <main className="min-h-screen bg-white px-6 py-10 flex items-center justify-center">
-      <div className="w-full max-w-md">
+    <main
+      style={{
+        minHeight: "100vh",
+        background: "#ffffff",
+        padding: "40px 24px",
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
+        fontFamily: "Arial, sans-serif",
+      }}
+    >
+      <div style={{ width: "100%", maxWidth: "420px" }}>
 
-        <h1 className="text-4xl font-bold text-center mb-2">
+        <h1
+          style={{
+            fontSize: "36px",
+            textAlign: "center",
+            marginBottom: "8px",
+          }}
+        >
           Let’s get started
         </h1>
 
-        <p className="text-center text-gray-500 mb-10">
+        <p
+          style={{
+            textAlign: "center",
+            color: "#777",
+            marginBottom: "40px",
+          }}
+        >
           Set your goal. We’ll do the rest.
         </p>
 
-        {/* GOAL */}
-        <div className="mb-8">
-          <p className="font-semibold mb-3">What’s your goal?</p>
+        <h3>What’s your goal?</h3>
 
-          <div className="grid grid-cols-3 gap-2">
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(3, 1fr)",
+            gap: "8px",
+            marginBottom: "32px",
+          }}
+        >
+          {[
+            ["lose", "Lose"],
+            ["maintain", "Maintain"],
+            ["gain", "Gain"],
+          ].map(([value, label]) => (
             <button
-              onClick={() => setGoal("lose")}
-              className={`p-3 rounded-xl border ${
-                goal === "lose"
-                  ? "bg-black text-white"
-                  : "bg-white text-black"
-              }`}
+              key={value}
+              onClick={() => setGoal(value)}
+              style={{
+                padding: "14px 5px",
+                borderRadius: "12px",
+                border: "1px solid #ddd",
+                background: goal === value ? "#000" : "#fff",
+                color: goal === value ? "#fff" : "#000",
+                fontWeight: "600",
+              }}
             >
-              Lose
+              {label}
             </button>
-
-            <button
-              onClick={() => setGoal("maintain")}
-              className={`p-3 rounded-xl border ${
-                goal === "maintain"
-                  ? "bg-black text-white"
-                  : "bg-white text-black"
-              }`}
-            >
-              Maintain
-            </button>
-
-            <button
-              onClick={() => setGoal("gain")}
-              className={`p-3 rounded-xl border ${
-                goal === "gain"
-                  ? "bg-black text-white"
-                  : "bg-white text-black"
-              }`}
-            >
-              Gain
-            </button>
-          </div>
+          ))}
         </div>
 
-        {/* CURRENT WEIGHT */}
         <Slider
           title="Current weight"
           value={weight}
@@ -70,7 +83,6 @@ export default function Home() {
           setValue={setWeight}
         />
 
-        {/* GOAL WEIGHT */}
         <Slider
           title="Goal weight"
           value={goalWeight}
@@ -80,7 +92,6 @@ export default function Home() {
           setValue={setGoalWeight}
         />
 
-        {/* HEIGHT */}
         <Slider
           title="Height"
           value={height}
@@ -92,7 +103,17 @@ export default function Home() {
 
         <button
           onClick={() => alert("Setup complete")}
-          className="w-full bg-black text-white py-4 rounded-2xl font-bold text-lg mt-8"
+          style={{
+            width: "100%",
+            padding: "17px",
+            marginTop: "10px",
+            borderRadius: "14px",
+            border: "none",
+            background: "#000",
+            color: "#fff",
+            fontSize: "18px",
+            fontWeight: "700",
+          }}
         >
           Start
         </button>
@@ -102,28 +123,20 @@ export default function Home() {
   );
 }
 
-function Slider({
-  title,
-  value,
-  min,
-  max,
-  unit,
-  setValue,
-}: {
-  title: string;
-  value: number;
-  min: number;
-  max: number;
-  unit: string;
-  setValue: (value: number) => void;
-}) {
+function Slider({ title, value, min, max, unit, setValue }) {
   return (
-    <div className="mb-7">
-      <div className="flex justify-between mb-2">
-        <span className="font-semibold">{title}</span>
-        <span className="font-bold">
+    <div style={{ marginBottom: "28px" }}>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          marginBottom: "8px",
+        }}
+      >
+        <strong>{title}</strong>
+        <strong>
           {value} {unit}
-        </span>
+        </strong>
       </div>
 
       <input
@@ -132,7 +145,7 @@ function Slider({
         max={max}
         value={value}
         onChange={(e) => setValue(Number(e.target.value))}
-        className="w-full"
+        style={{ width: "100%" }}
       />
     </div>
   );
