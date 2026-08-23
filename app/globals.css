@@ -1,30 +1,1261 @@
-* {
+/* =========================================================
+   FOOD COPILOT — GLOBAL DESIGN SYSTEM
+   0 → 1 CONSUMER APP
+   ========================================================= */
+
+
+/* =========================================================
+   1. RESET
+   ========================================================= */
+
+*,
+*::before,
+*::after {
   box-sizing: border-box;
 }
 
-html,
+html {
+  width: 100%;
+  min-height: 100%;
+  background: #f6f6f3;
+  -webkit-text-size-adjust: 100%;
+  text-rendering: optimizeLegibility;
+  scroll-behavior: smooth;
+}
+
 body {
+  width: 100%;
+  min-height: 100vh;
   margin: 0;
   padding: 0;
+
   background: #f6f6f3;
-  color: #111;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  color: #111111;
+
+  font-family:
+    -apple-system,
+    BlinkMacSystemFont,
+    "Inter",
+    "SF Pro Display",
+    "SF Pro Text",
+    "Segoe UI",
+    Roboto,
+    Helvetica,
+    Arial,
+    sans-serif;
+
+  font-size: 16px;
+  line-height: 1.45;
+
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 button,
-input {
+input,
+textarea,
+select {
   font: inherit;
 }
 
 button {
-  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
 }
 
-body {
+img,
+svg {
+  display: block;
+  max-width: 100%;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+
+/* =========================================================
+   2. APP ROOT
+   ========================================================= */
+
+#__next,
+main {
   min-height: 100vh;
 }
 
-img {
-  max-width: 100%;
+main {
+  width: 100%;
+}
+
+
+/* =========================================================
+   3. DESIGN TOKENS
+   ========================================================= */
+
+:root {
+
+  /* Backgrounds */
+  --bg: #f6f6f3;
+  --surface: #ffffff;
+  --surface-soft: #eeeeeb;
+  --surface-dark: #111111;
+
+  /* Text */
+  --text: #111111;
+  --text-secondary: #626262;
+  --text-muted: #929292;
+  --text-inverse: #ffffff;
+
+  /* Borders */
+  --border: rgba(17, 17, 17, 0.08);
+  --border-strong: rgba(17, 17, 17, 0.14);
+
+  /* Brand */
+  --accent: #111111;
+
+  /* Feedback */
+  --success: #137a43;
+  --success-soft: #e8f5ed;
+
+  --warning: #9a6500;
+  --warning-soft: #fff4d9;
+
+  --danger: #c53030;
+  --danger-soft: #fff0f0;
+
+  /* Radius */
+  --radius-xs: 8px;
+  --radius-sm: 12px;
+  --radius-md: 16px;
+  --radius-lg: 22px;
+  --radius-xl: 30px;
+  --radius-pill: 999px;
+
+  /* Shadows */
+  --shadow-xs:
+    0 1px 3px rgba(0, 0, 0, 0.04);
+
+  --shadow-sm:
+    0 5px 18px rgba(0, 0, 0, 0.055);
+
+  --shadow-md:
+    0 12px 35px rgba(0, 0, 0, 0.08);
+
+  --shadow-lg:
+    0 24px 70px rgba(0, 0, 0, 0.12);
+
+  /* Motion */
+  --ease:
+    cubic-bezier(0.22, 1, 0.36, 1);
+
+  --fast:
+    140ms var(--ease);
+
+  --normal:
+    240ms var(--ease);
+
+  --slow:
+    420ms var(--ease);
+
+  /* Layout */
+  --max-width: 480px;
+
+  --page-padding: 20px;
+
+  --safe-top:
+    max(20px, env(safe-area-inset-top));
+
+  --safe-bottom:
+    max(20px, env(safe-area-inset-bottom));
+}
+
+
+/* =========================================================
+   4. SELECTION / FOCUS
+   ========================================================= */
+
+::selection {
+  background: #111111;
+  color: #ffffff;
+}
+
+:focus-visible {
+  outline: 3px solid rgba(17, 17, 17, 0.25);
+  outline-offset: 3px;
+}
+
+
+/* =========================================================
+   5. APP CONTAINER
+   ========================================================= */
+
+.app {
+  width: 100%;
+  min-height: 100vh;
+
+  padding:
+    var(--safe-top)
+    var(--page-padding)
+    var(--safe-bottom);
+
+  display: flex;
+  justify-content: center;
+}
+
+.app-inner {
+  width: 100%;
+  max-width: var(--max-width);
+  margin: 0 auto;
+}
+
+
+/* =========================================================
+   6. TYPOGRAPHY
+   ========================================================= */
+
+h1,
+h2,
+h3,
+h4,
+p {
+  margin-top: 0;
+}
+
+h1,
+h2,
+h3 {
+  letter-spacing: -0.045em;
+}
+
+h1 {
+  font-size: clamp(36px, 10vw, 52px);
+  line-height: 0.98;
+  font-weight: 850;
+}
+
+h2 {
+  font-size: clamp(28px, 7vw, 38px);
+  line-height: 1;
+  font-weight: 820;
+}
+
+h3 {
+  font-size: 21px;
+  line-height: 1.08;
+  font-weight: 780;
+}
+
+p {
+  color: var(--text-secondary);
+}
+
+.text-muted {
+  color: var(--text-muted);
+}
+
+.text-small {
+  font-size: 13px;
+}
+
+.text-label {
+  font-size: 11px;
+  line-height: 1;
+  font-weight: 800;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+
+/* =========================================================
+   7. BRAND
+   ========================================================= */
+
+.brand {
+  display: inline-flex;
+  align-items: center;
+
+  font-size: 12px;
+  line-height: 1;
+
+  font-weight: 900;
+  letter-spacing: 0.22em;
+
+  color: var(--text);
+}
+
+
+/* =========================================================
+   8. BUTTON SYSTEM
+   ========================================================= */
+
+button {
+  border: 0;
+  cursor: pointer;
+}
+
+.btn {
+  min-height: 54px;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+
+  padding: 0 20px;
+
+  border-radius: var(--radius-md);
+
+  font-weight: 780;
+  font-size: 16px;
+
+  transition:
+    transform var(--fast),
+    box-shadow var(--fast),
+    background var(--fast),
+    opacity var(--fast);
+}
+
+.btn:active {
+  transform: scale(0.975);
+}
+
+.btn-primary {
+  width: 100%;
+
+  background: var(--surface-dark);
+  color: var(--text-inverse);
+
+  box-shadow: var(--shadow-sm);
+}
+
+.btn-primary:hover {
+  box-shadow: var(--shadow-md);
+}
+
+.btn-secondary {
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--border-strong);
+}
+
+.btn-ghost {
+  background: transparent;
+  color: var(--text-secondary);
+}
+
+
+/* =========================================================
+   9. GOAL SELECTOR
+   ========================================================= */
+
+.goal-selector {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.goal-option {
+  min-height: 56px;
+
+  border-radius: var(--radius-md);
+
+  background: var(--surface-soft);
+  color: var(--text);
+
+  font-weight: 750;
+
+  transition:
+    background var(--normal),
+    color var(--normal),
+    transform var(--fast);
+}
+
+.goal-option:active {
+  transform: scale(0.97);
+}
+
+.goal-option.active,
+.goal-option[aria-selected="true"] {
+  background: var(--surface-dark);
+  color: var(--text-inverse);
+}
+
+
+/* =========================================================
+   10. SLIDERS
+   ========================================================= */
+
+.slider-group {
+  width: 100%;
+}
+
+.slider-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  margin-bottom: 10px;
+}
+
+.slider-label {
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.slider-value {
+  font-size: 15px;
+  font-weight: 850;
+}
+
+input[type="range"] {
+  width: 100%;
+  height: 24px;
+
+  margin: 0;
+  padding: 0;
+
+  appearance: none;
+  -webkit-appearance: none;
+
+  background: transparent;
+
+  cursor: pointer;
+}
+
+input[type="range"]::-webkit-slider-runnable-track {
+  height: 5px;
+  border-radius: var(--radius-pill);
+  background: #d8d8d4;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  width: 24px;
+  height: 24px;
+
+  margin-top: -9.5px;
+
+  appearance: none;
+  -webkit-appearance: none;
+
+  border: 3px solid #ffffff;
+  border-radius: 50%;
+
+  background: #111111;
+
+  box-shadow:
+    0 2px 7px rgba(0, 0, 0, 0.22);
+
+  transition:
+    transform var(--fast);
+}
+
+input[type="range"]:active::-webkit-slider-thumb {
+  transform: scale(1.14);
+}
+
+input[type="range"]::-moz-range-track {
+  height: 5px;
+  border-radius: var(--radius-pill);
+  background: #d8d8d4;
+}
+
+input[type="range"]::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
+
+  border: 3px solid #ffffff;
+  border-radius: 50%;
+
+  background: #111111;
+
+  box-shadow:
+    0 2px 7px rgba(0, 0, 0, 0.22);
+}
+
+
+/* =========================================================
+   11. CAMERA
+   ========================================================= */
+
+.camera-shell {
+  position: relative;
+
+  width: 100%;
+  overflow: hidden;
+
+  border-radius: var(--radius-xl);
+
+  background: #111111;
+
+  box-shadow: var(--shadow-lg);
+}
+
+.camera-button {
+  position: relative;
+
+  width: 100%;
+  min-height: 420px;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+
+  overflow: hidden;
+
+  border-radius: inherit;
+
+  background:
+    radial-gradient(
+      circle at 50% 40%,
+      #303030 0%,
+      #171717 42%,
+      #090909 100%
+    );
+
+  color: #ffffff;
+
+  transition:
+    transform var(--fast),
+    box-shadow var(--normal);
+}
+
+.camera-button::before {
+  content: "";
+
+  position: absolute;
+  inset: 0;
+
+  background:
+    radial-gradient(
+      circle at 50% 45%,
+      rgba(255, 255, 255, 0.08),
+      transparent 42%
+    );
+
+  pointer-events: none;
+}
+
+.camera-button:active {
+  transform: scale(0.985);
+}
+
+.camera-icon {
+  position: relative;
+
+  width: 92px;
+  height: 72px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  margin-bottom: 25px;
+
+  border-radius: 20px;
+
+  background: #ffffff;
+
+  box-shadow:
+    0 20px 55px rgba(0, 0, 0, 0.28);
+}
+
+.camera-icon::before {
+  content: "";
+
+  position: absolute;
+
+  top: -8px;
+  left: 18px;
+
+  width: 31px;
+  height: 12px;
+
+  border-radius: 6px 6px 0 0;
+
+  background: #ffffff;
+}
+
+.camera-icon::after {
+  content: "";
+
+  width: 34px;
+  height: 34px;
+
+  border: 5px solid #111111;
+
+  border-radius: 50%;
+}
+
+.camera-title {
+  position: relative;
+
+  margin: 0;
+
+  color: #ffffff;
+
+  font-size: 24px;
+  font-weight: 850;
+
+  letter-spacing: -0.025em;
+}
+
+.camera-subtitle {
+  position: relative;
+
+  margin: 7px 0 0;
+
+  color: rgba(255, 255, 255, 0.52);
+
+  font-size: 14px;
+}
+
+
+/* =========================================================
+   12. PHOTO PREVIEW
+   ========================================================= */
+
+.photo-preview {
+  position: relative;
+
+  width: 100%;
+  overflow: hidden;
+
+  border-radius: var(--radius-xl);
+
+  background: #111111;
+
+  box-shadow: var(--shadow-md);
+}
+
+.photo-preview img {
+  width: 100%;
+  max-height: 560px;
+
+  object-fit: cover;
+
+  border-radius: inherit;
+}
+
+.photo-overlay {
+  position: absolute;
+
+  inset: 0;
+
+  pointer-events: none;
+
+  background:
+    linear-gradient(
+      to bottom,
+      rgba(0, 0, 0, 0.08),
+      transparent 35%,
+      rgba(0, 0, 0, 0.22)
+    );
+}
+
+
+/* =========================================================
+   13. ANALYSIS LOADING
+   ========================================================= */
+
+.analysis-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+
+  min-height: 170px;
+
+  padding: 28px;
+
+  border-radius: var(--radius-lg);
+
+  background: var(--surface);
+
+  box-shadow: var(--shadow-sm);
+
+  text-align: center;
+}
+
+.analysis-orb {
+  width: 42px;
+  height: 42px;
+
+  margin-bottom: 15px;
+
+  border-radius: 50%;
+
+  background: #111111;
+
+  animation:
+    pulse-orb 1.25s ease-in-out infinite;
+}
+
+.analysis-loading strong {
+  font-size: 17px;
+}
+
+.analysis-loading span {
+  margin-top: 5px;
+
+  color: var(--text-muted);
+
+  font-size: 13px;
+}
+
+@keyframes pulse-orb {
+  0%,
+  100% {
+    transform: scale(0.82);
+    opacity: 0.55;
+  }
+
+  50% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+
+/* =========================================================
+   14. RESULT CARD
+   ========================================================= */
+
+.result-card {
+  width: 100%;
+
+  padding: 24px;
+
+  border-radius: var(--radius-xl);
+
+  background: var(--surface);
+
+  box-shadow: var(--shadow-md);
+}
+
+.result-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+
+  gap: 16px;
+}
+
+.result-name {
+  margin: 5px 0 0;
+
+  font-size: 24px;
+  line-height: 1.05;
+  font-weight: 850;
+}
+
+.result-check {
+  flex: 0 0 auto;
+
+  width: 38px;
+  height: 38px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 50%;
+
+  background: #111111;
+  color: #ffffff;
+
+  font-size: 15px;
+  font-weight: 900;
+}
+
+.result-calories {
+  margin-top: 24px;
+
+  font-size: clamp(48px, 13vw, 66px);
+  line-height: 0.9;
+
+  font-weight: 900;
+  letter-spacing: -0.065em;
+}
+
+.result-calories span {
+  margin-left: 5px;
+
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: 0;
+
+  color: var(--text-secondary);
+}
+
+
+/* =========================================================
+   15. MACROS
+   ========================================================= */
+
+.macro-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+
+  gap: 8px;
+
+  margin-top: 24px;
+}
+
+.macro-card {
+  min-width: 0;
+
+  padding: 15px 8px;
+
+  border-radius: var(--radius-md);
+
+  background: var(--surface-soft);
+
+  text-align: center;
+}
+
+.macro-value {
   display: block;
+
+  font-size: 19px;
+  line-height: 1;
+
+  font-weight: 850;
+}
+
+.macro-label {
+  display: block;
+
+  margin-top: 5px;
+
+  color: var(--text-muted);
+
+  font-size: 11px;
+  font-weight: 700;
+}
+
+
+/* =========================================================
+   16. DAILY STATE
+   ========================================================= */
+
+.day-card {
+  padding: 22px;
+
+  border-radius: var(--radius-xl);
+
+  background: #111111;
+  color: #ffffff;
+
+  box-shadow: var(--shadow-md);
+}
+
+.day-card .text-label {
+  color: rgba(255, 255, 255, 0.48);
+}
+
+.day-number {
+  margin-top: 8px;
+
+  font-size: clamp(42px, 11vw, 58px);
+  line-height: 0.9;
+
+  font-weight: 900;
+  letter-spacing: -0.06em;
+}
+
+.day-number span {
+  font-size: 15px;
+  font-weight: 650;
+
+  letter-spacing: 0;
+
+  color: rgba(255, 255, 255, 0.48);
+}
+
+.progress-track {
+  width: 100%;
+  height: 7px;
+
+  margin-top: 20px;
+
+  overflow: hidden;
+
+  border-radius: var(--radius-pill);
+
+  background: rgba(255, 255, 255, 0.14);
+}
+
+.progress-fill {
+  height: 100%;
+
+  border-radius: inherit;
+
+  background: #ffffff;
+
+  transform-origin: left center;
+
+  transition:
+    width 500ms var(--ease);
+}
+
+
+/* =========================================================
+   17. NEXT ACTION
+   ========================================================= */
+
+.next-action {
+  padding: 21px;
+
+  border-radius: var(--radius-lg);
+
+  background: var(--surface);
+
+  border: 1px solid var(--border);
+
+  box-shadow: var(--shadow-xs);
+}
+
+.next-action-title {
+  margin: 7px 0 0;
+
+  font-size: 20px;
+  line-height: 1.12;
+  font-weight: 820;
+
+  letter-spacing: -0.025em;
+}
+
+.next-action-copy {
+  margin: 8px 0 0;
+
+  font-size: 14px;
+  line-height: 1.45;
+
+  color: var(--text-secondary);
+}
+
+
+/* =========================================================
+   18. RECOMMENDATION CARDS
+   ========================================================= */
+
+.recommendations {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.recommendation {
+  width: 100%;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 14px;
+
+  padding: 17px;
+
+  border-radius: var(--radius-lg);
+
+  background: var(--surface);
+
+  border: 1px solid var(--border);
+
+  text-align: left;
+
+  transition:
+    transform var(--fast),
+    box-shadow var(--fast),
+    border-color var(--fast);
+}
+
+.recommendation:hover {
+  border-color: var(--border-strong);
+  box-shadow: var(--shadow-sm);
+}
+
+.recommendation:active {
+  transform: scale(0.985);
+}
+
+.recommendation-main {
+  min-width: 0;
+}
+
+.recommendation-name {
+  margin: 0;
+
+  font-size: 16px;
+  line-height: 1.15;
+  font-weight: 800;
+}
+
+.recommendation-reason {
+  margin: 5px 0 0;
+
+  color: var(--text-secondary);
+
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.recommendation-stats {
+  flex: 0 0 auto;
+
+  text-align: right;
+}
+
+.recommendation-calories {
+  font-size: 14px;
+  font-weight: 850;
+}
+
+.recommendation-protein {
+  margin-top: 2px;
+
+  color: var(--text-muted);
+
+  font-size: 11px;
+}
+
+
+/* =========================================================
+   19. FOOD LIST
+   ========================================================= */
+
+.food-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.food-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 15px;
+
+  padding: 15px 0;
+
+  border-bottom: 1px solid var(--border);
+}
+
+.food-row:last-child {
+  border-bottom: 0;
+}
+
+.food-name {
+  min-width: 0;
+
+  font-size: 14px;
+  font-weight: 680;
+}
+
+.food-amount {
+  flex: 0 0 auto;
+
+  color: var(--text-secondary);
+
+  font-size: 13px;
+  font-weight: 650;
+}
+
+
+/* =========================================================
+   20. ERROR STATES
+   ========================================================= */
+
+.error-card {
+  padding: 17px;
+
+  border-radius: var(--radius-md);
+
+  background: var(--danger-soft);
+
+  color: var(--danger);
+
+  font-size: 14px;
+  font-weight: 650;
+
+  border: 1px solid rgba(197, 48, 48, 0.1);
+}
+
+
+/* =========================================================
+   21. SPACING UTILITIES
+   ========================================================= */
+
+.stack-1 > * + * {
+  margin-top: 6px;
+}
+
+.stack-2 > * + * {
+  margin-top: 12px;
+}
+
+.stack-3 > * + * {
+  margin-top: 18px;
+}
+
+.stack-4 > * + * {
+  margin-top: 24px;
+}
+
+.stack-5 > * + * {
+  margin-top: 32px;
+}
+
+.stack-6 > * + * {
+  margin-top: 42px;
+}
+
+
+/* =========================================================
+   22. SAFE MOBILE BEHAVIOUR
+   ========================================================= */
+
+@media (max-width: 380px) {
+  :root {
+    --page-padding: 16px;
+  }
+
+  .camera-button {
+    min-height: 390px;
+  }
+
+  .result-card {
+    padding: 20px;
+  }
+
+  .day-card {
+    padding: 20px;
+  }
+
+  .recommendation {
+    padding: 15px;
+  }
+}
+
+
+/* =========================================================
+   23. TABLET / DESKTOP
+   ========================================================= */
+
+@media (min-width: 700px) {
+  :root {
+    --page-padding: 28px;
+  }
+
+  body {
+    background:
+      radial-gradient(
+        circle at 50% 0%,
+        #ffffff 0%,
+        #f6f6f3 55%
+      );
+  }
+
+  .app {
+    padding-top: 45px;
+    padding-bottom: 45px;
+  }
+}
+
+
+/* =========================================================
+   24. REDUCED MOTION
+   ========================================================= */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+
+/* =========================================================
+   25. DARK MODE — SYSTEM SAFE
+   ========================================================= */
+
+@media (prefers-color-scheme: dark) {
+  /*
+    Deliberately NOT switching the entire product to dark mode yet.
+
+    For a food product, image recognition + food photography
+    benefits from a stable light canvas.
+
+    We can introduce a deliberate dark theme later rather than
+    letting the OS randomly change the brand appearance.
+  */
+}
+
+
+/* =========================================================
+   26. IOS / MOBILE INTERACTION
+   ========================================================= */
+
+@supports (-webkit-touch-callout: none) {
+  button,
+  input,
+  textarea,
+  select {
+    font-size: 16px;
+  }
+
+  input[type="range"] {
+    min-height: 44px;
+  }
+}
+
+
+/* =========================================================
+   27. DISABLE ACCIDENTAL HIGHLIGHTING ON APP CONTROLS
+   ========================================================= */
+
+button,
+.goal-option,
+.recommendation,
+.camera-button {
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+
+/* =========================================================
+   28. TOUCH TARGET GUARANTEE
+   ========================================================= */
+
+button {
+  min-width: 44px;
+  min-height: 44px;
+}
+
+
+/* =========================================================
+   29. SCROLLBAR
+   ========================================================= */
+
+::-webkit-scrollbar {
+  width: 7px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(17, 17, 17, 0.15);
+  border-radius: 999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(17, 17, 17, 0.25);
 }
