@@ -2,624 +2,686 @@ import OpenAI from "openai";
 
 export const runtime = "nodejs";
 
-const openai = new OpenAI({
+const client = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
-const nutritionSchema = {
-  type: "object",
-  additionalProperties: false,
-  properties: {
-    is_food: {
-      type: "boolean",
-    },
-
-    meal_name: {
-      type: "string",
-    },
-
-    confidence: {
-      type: "string",
-      enum: ["high", "medium", "low"],
-    },
-
-    calories: {
-      type: "number",
-    },
-
-    protein_g: {
-      type: "number",
-    },
-
-    carbs_g: {
-      type: "number",
-    },
-
-    fat_g: {
-      type: "number",
-    },
-
-    items: {
-      type: "array",
-      items: {
-        type: "object",
-        additionalProperties: false,
-        properties: {
-          name: {
-            type: "string",
-          },
-          portion: {
-            type: "string",
-          },
-          calories: {
-            type: "number",
-          },
-          protein_g: {
-            type: "number",
-          },
-          carbs_g: {
-            type: "number",
-          },
-          fat_g: {
-            type: "number",
-          },
-        },
-        required: [
-          "name",
-          "portion",
-          "calories",
-          "protein_g",
-          "carbs_g",
-          "fat_g",
-        ],
-      },
-    },
-
-    assumptions: {
-      type: "array",
-      items: {
-        type: "string",
-      },
-    },
-
-    coaching_message: {
-      type: "string",
-    },
-
-    next_action: {
-      type: "string",
-    },
-
-    recommendations: {
-      type: "array",
-      items: {
-        type: "object",
-        additionalProperties: false,
-        properties: {
-          name: {
-            type: "string",
-          },
-          reason: {
-            type: "string",
-          },
-          calories: {
-            type: "number",
-          },
-          protein_g: {
-            type: "number",
-          },
-        },
-        required: [
-          "name",
-          "reason",
-          "calories",
-          "protein_g",
-        ],
-      },
-    },
-  },
-
-  required: [
-    "is_food",
-    "meal_name",
-    "confidence",
-    "calories",
-    "protein_g",
-    "carbs_g",
-    "fat_g",
-    "items",
-    "assumptions",
-    "coaching_message",
-    "next_action",
-    "recommendations",
-  ],
-};
-
-function number(value, fallback = 0) {
-  const n = Number(value);
-  return Number.isFinite(n) ? n : fallback;
-}
-
-function safeJson(value, fallback) {
-  if (!value) return fallback;
-
-  try {
-    return JSON.parse(value);
-  } catch {
-    return fallback;
-  }
-}
-
 export async function POST(request) {
   try {
-    // ---------------------------------------------
-    // BASIC VALIDATION
-    // ---------------------------------------------
-
     if (!process.env.OPENAI_API_KEY) {
       return Response.json(
         {
-          success: false,
-          error: "OPENAI_API_KEY is not configured.",
+          error:
+            "OPENAI_API_KEY is not configured.",
         },
         { status: 500 }
       );
     }
 
-    const formData = await request.formData();
+    const formData =
+      await request.formData();
 
-    const image = formData.get("image");
+    const image =
+      formData.get("image");
 
-    if (!image || typeof image.arrayBuffer !== "function") {
+    if (!image) {
       return Response.json(
         {
-          success: false,
-          error: "No valid food image was received.",
+          error:
+            "No food photo received.",
         },
         { status: 400 }
       );
     }
 
-    // ---------------------------------------------
-    // OPTIONAL USER STATE
-    //
-    // These fields don't need to exist yet.
-    // Page.jsx can start sending them later.
-    // ---------------------------------------------
+    if (
+      typeof image.arrayBuffer !==
+      "function"
+    ) {
+      return Response.json(
+        {
+          error:
+            "Invalid image upload.",
+        },
+        { status: 400 }
+      );
+    }
 
-    const profile = safeJson(
-      formData.get("profile"),
-      {}
-    );
+    const bytes =
+      await image.arrayBuffer();
 
-    const day = safeJson(
-      formData.get("day"),
-      {
-        calories: 0,
-        protein_g: 0,
-        carbs_g: 0,
-        fat_g: 0,
-        meals: [],
-      }
-    );
-
-    const history = safeJson(
-      formData.get("history"),
-      []
-    );
-
-    const preferences = safeJson(
-      formData.get("preferences"),
-      {
-        likes: [],
-        dislikes: [],
-        dietary_rules: [],
-      }
-    );
-
-    // ---------------------------------------------
-    // IMAGE
-    // ---------------------------------------------
-
-    const bytes = await image.arrayBuffer();
-
-    const base64 = Buffer.from(bytes).toString("base64");
+    const base64 =
+      Buffer.from(bytes).toString(
+        "base64"
+      );
 
     const mimeType =
       image.type || "image/jpeg";
 
-    const imageDataUrl =
-      `data:${mimeType};base64,${base64}`;
+    /*
+     * ------------------------------------------
+     * USER CONTEXT
+     * ------------------------------------------
+     */
 
-    // ---------------------------------------------
-    // USER CONTEXT
-    // ---------------------------------------------
+    let profile = {};
+
+    let day = {};
+
+    let history = [];
+
+    try {
+      profile = JSON.parse(
+        formData.get("profile") ||
+          "{}"
+      );
+    } catch {}
+
+    try {
+      day = JSON.parse(
+        formData.get("day") ||
+          "{}"
+      );
+    } catch {}
+
+    try {
+      history = JSON.parse(
+        formData.get("history") ||
+          "[]"
+      );
+    } catch {}
+
+    /*
+     * ------------------------------------------
+     * SANITISE CONTEXT
+     * ------------------------------------------
+     */
 
     const goal =
-      profile.goal || "maintain";
+      ["lose", "maintain", "gain"].includes(
+        profile.goal
+      )
+        ? profile.goal
+        : "maintain";
 
     const currentWeight =
-      number(profile.current_weight, null);
+      Number(profile.currentWeight) ||
+      70;
 
     const goalWeight =
-      number(profile.goal_weight, null);
+      Number(profile.goalWeight) ||
+      currentWeight;
 
     const height =
-      number(profile.height, null);
+      Number(profile.height) ||
+      175;
 
     const caloriesAlready =
-      number(day.calories, 0);
+      Number(day.calories) || 0;
 
     const proteinAlready =
-      number(day.protein_g, 0);
+      Number(day.protein_g) || 0;
 
-    const carbsAlready =
-      number(day.carbs_g, 0);
+    /*
+     * We deliberately don't let arbitrary
+     * client data become an instruction.
+     *
+     * It is context only.
+     */
 
-    const fatAlready =
-      number(day.fat_g, 0);
+    const userContext = {
+      goal,
+      currentWeight,
+      goalWeight,
+      height,
+      caloriesAlready,
+      proteinAlready,
+      recentMeals: Array.isArray(history)
+        ? history
+            .slice(-8)
+            .map((meal) => ({
+              name: String(
+                meal.meal_name ||
+                  meal.name ||
+                  ""
+              ).slice(0, 100),
 
-    // ---------------------------------------------
-    // CORE INTELLIGENCE PROMPT
-    // ---------------------------------------------
+              calories:
+                Number(
+                  meal.calories
+                ) || 0,
+            }))
+        : [],
+    };
 
-    const instructions = `
-You are the nutrition intelligence engine behind a consumer
-food application.
-
-Your job is to turn a photograph of food into useful,
-honest and actionable nutrition intelligence.
-
-You are NOT a generic chatbot.
-
-You must do four things:
-
-1. UNDERSTAND THE FOOD
-2. ESTIMATE ITS NUTRITION
-3. UNDERSTAND WHAT IT MEANS FOR THE USER'S DAY
-4. RECOMMEND THE MOST USEFUL NEXT ACTION
-
-IMPORTANT PRINCIPLES:
-
-- Never pretend a photograph provides laboratory precision.
-- Use sensible portion estimates.
-- Account for oils, sauces, dressings and cooking methods
-  when they are visually plausible.
-- Do not hallucinate ingredients that are impossible to infer.
-- If uncertain, make the best practical estimate and record
-  the uncertainty in assumptions.
-- Keep recommendations practical.
-- Prefer ordinary foods people can actually obtain.
-- Do not lecture the user.
-- Do not overwhelm the user.
-- The user should feel that the app is quietly helping them
-  make better food decisions.
-
-USER
-
-Goal: ${goal}
-
-Current weight:
-${currentWeight === null ? "unknown" : `${currentWeight} kg`}
-
-Goal weight:
-${goalWeight === null ? "unknown" : `${goalWeight} kg`}
-
-Height:
-${height === null ? "unknown" : `${height} cm`}
-
-TODAY
-
-Calories already logged:
-${caloriesAlready}
-
-Protein already logged:
-${proteinAlready} g
-
-Carbohydrates already logged:
-${carbsAlready} g
-
-Fat already logged:
-${fatAlready} g
-
-RECENT MEALS
-
-${JSON.stringify(history)}
-
-PREFERENCES
-
-Likes:
-${JSON.stringify(preferences.likes || [])}
-
-Dislikes:
-${JSON.stringify(preferences.dislikes || [])}
-
-Dietary rules:
-${JSON.stringify(preferences.dietary_rules || [])}
-
-PHOTO TASK
-
-Analyse the photograph.
-
-Identify the meal and visible food.
-
-Estimate:
-
-- calories
-- protein
-- carbohydrates
-- fat
-- portions
-- individual components
-
-Then consider the user's current state.
-
-If the user is trying to lose weight, prioritise sustainable
-calorie control and adequate protein.
-
-If maintaining, prioritise consistency and balanced intake.
-
-If gaining, prioritise sufficient calories and protein.
-
-Do NOT calculate a supposedly exact daily calorie requirement
-from insufficient information.
-
-If the app has not supplied a validated daily target, do not
-invent one.
-
-Instead, make the recommendation relative to the user's goal
-and current logged intake.
-
-NEXT ACTION
-
-Your next_action should be a short instruction such as:
-
-"Prioritise a high-protein dinner."
-
-"You're in a good position. Just eat normally tonight."
-
-"Add a protein-rich snack later."
-
-"Log your next meal when you're ready."
-
-RECOMMENDATIONS
-
-Return three genuinely different options.
-
-Each should be:
-
-- realistic
-- specific
-- compatible with the user's goal
-- meaningfully useful given what they have already eaten
-
-Examples:
-
-"Greek yoghurt + berries"
-
-"Chicken rice bowl"
-
-"Eggs on toast with fruit"
-
-Do not simply return three generic "healthy foods."
-
-COACHING MESSAGE
-
-One short sentence.
-
-It should feel encouraging and useful rather than like
-fitness-influencer content.
-
-If the photograph is not food:
-
-Set is_food to false.
-
-Do not invent nutrition.
-
-Return an empty items array and empty recommendations.
-
-The meal_name should explain what happened, e.g.
-"No food detected".
-`;
-
-    // ---------------------------------------------
-    // OPENAI
-    // ---------------------------------------------
+    /*
+     * ------------------------------------------
+     * MODEL
+     * ------------------------------------------
+     *
+     * Use the current low-cost model available
+     * to the project. If you specifically have
+     * gpt-4.1-mini enabled, this is also compatible
+     * with that model.
+     */
 
     const response =
-      await openai.responses.create({
+      await client.responses.create({
         model: "gpt-5.6-luna",
 
         input: [
+          {
+            role: "system",
+
+            content: [
+              {
+                type: "input_text",
+
+                text: `
+You are the nutrition intelligence engine inside Food Copilot.
+
+Your job is to turn a photograph of food into a useful, practical nutrition decision.
+
+You are NOT a generic chatbot.
+
+You must:
+
+1. Determine whether the image actually contains food.
+2. Identify the meal.
+3. Identify visible food components.
+4. Estimate realistic portions from visual evidence.
+5. Estimate calories, protein, carbohydrates and fat.
+6. Account for visible oils, sauces and cooking methods.
+7. Avoid pretending that visual nutrition estimates are exact.
+8. Give ONE best estimate, not a range.
+9. Use the user's current daily intake and goal to make the next recommendation useful.
+10. Recommend foods that are realistic and easy to understand.
+
+IMPORTANT:
+
+Do not invent information that cannot reasonably be inferred from the photograph.
+
+If a portion is ambiguous, make the most reasonable estimate and record the assumption.
+
+If the image does not contain food, return food_detected=false.
+
+Do not provide medical advice.
+
+The output must follow the supplied structured schema exactly.
+`,
+              },
+            ],
+          },
+
           {
             role: "user",
 
             content: [
               {
                 type: "input_text",
-                text: instructions,
+
+                text: `
+Analyse this food photograph.
+
+USER CONTEXT:
+
+Goal:
+${userContext.goal}
+
+Current weight:
+${userContext.currentWeight} kg
+
+Goal weight:
+${userContext.goalWeight} kg
+
+Height:
+${userContext.height} cm
+
+Calories already eaten today:
+${userContext.caloriesAlready} kcal
+
+Protein already eaten today:
+${userContext.proteinAlready} g
+
+Recent meals:
+${JSON.stringify(
+  userContext.recentMeals
+)}
+
+Use this context when generating the "next_action" and food recommendations.
+
+Do NOT treat these numbers as medically precise targets.
+
+The immediate priority is making the result useful and effortless.
+`,
               },
 
               {
                 type: "input_image",
-                image_url: imageDataUrl,
-                detail: "high",
+
+                image_url:
+                  `data:${mimeType};base64,${base64}`,
               },
             ],
           },
         ],
 
+        /*
+         * Structured output means we no longer
+         * depend on stripping markdown fences
+         * and hoping JSON.parse succeeds.
+         */
+
         text: {
           format: {
             type: "json_schema",
 
-            name: "nutrition_analysis",
+            name: "food_analysis",
 
             strict: true,
 
-            schema: nutritionSchema,
+            schema: {
+              type: "object",
+
+              additionalProperties: false,
+
+              properties: {
+                food_detected: {
+                  type: "boolean",
+                },
+
+                meal_name: {
+                  type: "string",
+                },
+
+                calories: {
+                  type: "number",
+                },
+
+                protein_g: {
+                  type: "number",
+                },
+
+                carbs_g: {
+                  type: "number",
+                },
+
+                fat_g: {
+                  type: "number",
+                },
+
+                confidence: {
+                  type: "string",
+
+                  enum: [
+                    "high",
+                    "medium",
+                    "low",
+                  ],
+                },
+
+                assumptions: {
+                  type: "array",
+
+                  items: {
+                    type: "string",
+                  },
+                },
+
+                items: {
+                  type: "array",
+
+                  items: {
+                    type: "object",
+
+                    additionalProperties:
+                      false,
+
+                    properties: {
+                      name: {
+                        type: "string",
+                      },
+
+                      portion: {
+                        type: "string",
+                      },
+
+                      calories: {
+                        type: "number",
+                      },
+
+                      protein_g: {
+                        type: "number",
+                      },
+
+                      carbs_g: {
+                        type: "number",
+                      },
+
+                      fat_g: {
+                        type: "number",
+                      },
+                    },
+
+                    required: [
+                      "name",
+                      "portion",
+                      "calories",
+                      "protein_g",
+                      "carbs_g",
+                      "fat_g",
+                    ],
+                  },
+                },
+
+                next_action: {
+                  type: "string",
+                },
+
+                insight: {
+                  type: "string",
+                },
+
+                recommendations: {
+                  type: "array",
+
+                  items: {
+                    type: "object",
+
+                    additionalProperties:
+                      false,
+
+                    properties: {
+                      name: {
+                        type: "string",
+                      },
+
+                      reason: {
+                        type: "string",
+                      },
+
+                      calories: {
+                        type: "number",
+                      },
+
+                      protein_g: {
+                        type: "number",
+                      },
+                    },
+
+                    required: [
+                      "name",
+                      "reason",
+                      "calories",
+                      "protein_g",
+                    ],
+                  },
+                },
+              },
+
+              required: [
+                "food_detected",
+                "meal_name",
+                "calories",
+                "protein_g",
+                "carbs_g",
+                "fat_g",
+                "confidence",
+                "assumptions",
+                "items",
+                "next_action",
+                "insight",
+                "recommendations",
+              ],
+            },
           },
         },
       });
 
-    // ---------------------------------------------
-    // STRUCTURED OUTPUT
-    // ---------------------------------------------
+    /*
+     * ------------------------------------------
+     * PARSE STRUCTURED RESPONSE
+     * ------------------------------------------
+     */
 
-    const raw = response.output_text;
+    let result;
 
-    if (!raw) {
-      throw new Error(
-        "The nutrition model returned no output."
+    try {
+      result = JSON.parse(
+        response.output_text
+      );
+    } catch (error) {
+      console.error(
+        "STRUCTURED OUTPUT PARSE ERROR:",
+        response.output_text
+      );
+
+      return Response.json(
+        {
+          error:
+            "The nutrition engine returned an invalid result.",
+        },
+        { status: 502 }
       );
     }
 
-    const analysis = JSON.parse(raw);
+    /*
+     * ------------------------------------------
+     * SANITY CHECK
+     * ------------------------------------------
+     */
 
-    // ---------------------------------------------
-    // NON-FOOD PHOTO
-    // ---------------------------------------------
+    if (
+      typeof result.food_detected !==
+      "boolean"
+    ) {
+      throw new Error(
+        "Invalid food_detected value."
+      );
+    }
 
-    if (!analysis.is_food) {
+    if (!result.food_detected) {
       return Response.json({
         success: true,
 
         food_detected: false,
 
-        meal: null,
+        meal_name: "",
 
-        day: {
-          calories: caloriesAlready,
-          protein_g: proteinAlready,
-          carbs_g: carbsAlready,
-          fat_g: fatAlready,
-        },
+        calories: 0,
+
+        protein_g: 0,
+
+        carbs_g: 0,
+
+        fat_g: 0,
+
+        confidence: "low",
+
+        assumptions: [],
+
+        items: [],
 
         next_action:
-          "Take a photo of your meal or snack.",
-
-        recommendations: [],
+          "Take another photo of your food.",
 
         insight:
-          "No food was detected in that photo.",
+          "I couldn't confidently identify food in that image.",
+
+        recommendations: [],
       });
     }
 
-    // ---------------------------------------------
-    // CALCULATE UPDATED DAY
-    //
-    // These calculations happen in our code rather
-    // than asking the model to do arithmetic.
-    // ---------------------------------------------
+    /*
+     * ------------------------------------------
+     * NORMALISE NUMBERS
+     * ------------------------------------------
+     */
 
-    const mealCalories =
-      Math.max(0, number(analysis.calories));
+    const cleanNumber = (
+      value
+    ) => {
+      const number =
+        Number(value);
 
-    const mealProtein =
-      Math.max(0, number(analysis.protein_g));
+      if (!Number.isFinite(number)) {
+        return 0;
+      }
 
-    const mealCarbs =
-      Math.max(0, number(analysis.carbs_g));
+      return Math.max(
+        0,
+        Math.round(number)
+      );
+    };
 
-    const mealFat =
-      Math.max(0, number(analysis.fat_g));
+    result.calories =
+      cleanNumber(
+        result.calories
+      );
 
-    const updatedCalories =
-      caloriesAlready + mealCalories;
+    result.protein_g =
+      cleanNumber(
+        result.protein_g
+      );
 
-    const updatedProtein =
-      proteinAlready + mealProtein;
+    result.carbs_g =
+      cleanNumber(
+        result.carbs_g
+      );
 
-    const updatedCarbs =
-      carbsAlready + mealCarbs;
+    result.fat_g =
+      cleanNumber(
+        result.fat_g
+      );
 
-    const updatedFat =
-      fatAlready + mealFat;
+    result.items =
+      Array.isArray(
+        result.items
+      )
+        ? result.items.map(
+            (item) => ({
+              name:
+                String(
+                  item.name || "Food"
+                ),
 
-    // ---------------------------------------------
-    // RESPONSE
-    // ---------------------------------------------
+              portion:
+                String(
+                  item.portion || ""
+                ),
+
+              calories:
+                cleanNumber(
+                  item.calories
+                ),
+
+              protein_g:
+                cleanNumber(
+                  item.protein_g
+                ),
+
+              carbs_g:
+                cleanNumber(
+                  item.carbs_g
+                ),
+
+              fat_g:
+                cleanNumber(
+                  item.fat_g
+                ),
+            })
+          )
+        : [];
+
+    result.recommendations =
+      Array.isArray(
+        result.recommendations
+      )
+        ? result.recommendations
+            .slice(0, 3)
+            .map(
+              (item) => ({
+                name:
+                  String(
+                    item.name || ""
+                  ),
+
+                reason:
+                  String(
+                    item.reason || ""
+                  ),
+
+                calories:
+                  cleanNumber(
+                    item.calories
+                  ),
+
+                protein_g:
+                  cleanNumber(
+                    item.protein_g
+                  ),
+              })
+            )
+        : [];
+
+    /*
+     * ------------------------------------------
+     * FINAL RESPONSE
+     * ------------------------------------------
+     */
 
     return Response.json({
       success: true,
 
-      food_detected: true,
+      food_detected:
+        true,
 
-      meal: {
-        name: analysis.meal_name,
+      meal_name:
+        String(
+          result.meal_name ||
+            "Meal"
+        ),
 
-        calories: mealCalories,
+      calories:
+        result.calories,
 
-        protein_g: mealProtein,
+      protein_g:
+        result.protein_g,
 
-        carbs_g: mealCarbs,
+      carbs_g:
+        result.carbs_g,
 
-        fat_g: mealFat,
+      fat_g:
+        result.fat_g,
 
-        confidence:
-          analysis.confidence,
+      confidence:
+        result.confidence,
 
-        items:
-          analysis.items,
+      assumptions:
+        result.assumptions,
 
-        assumptions:
-          analysis.assumptions,
-      },
-
-      day: {
-        calories: updatedCalories,
-
-        protein_g: updatedProtein,
-
-        carbs_g: updatedCarbs,
-
-        fat_g: updatedFat,
-      },
+      items:
+        result.items,
 
       next_action:
-        analysis.next_action,
-
-      recommendations:
-        analysis.recommendations,
+        result.next_action,
 
       insight:
-        analysis.coaching_message,
+        result.insight,
 
-      meta: {
-        goal,
-
-        has_profile:
-          Boolean(
-            currentWeight ||
-            goalWeight ||
-            height
-          ),
-
-        history_items:
-          Array.isArray(history)
-            ? history.length
-            : 0,
-      },
+      recommendations:
+        result.recommendations,
     });
-
   } catch (error) {
     console.error(
-      "NUTRITION_ENGINE_ERROR",
+      "FOOD COPILOT API ERROR:",
       error
     );
 
     return Response.json(
       {
-        success: false,
-
         error:
-          error?.message ||
-          "Nutrition analysis failed.",
-
-        debug:
-          process.env.NODE_ENV === "development"
-            ? String(error)
-            : undefined,
+          "Couldn't analyse that photo. Try again.",
       },
       { status: 500 }
     );
