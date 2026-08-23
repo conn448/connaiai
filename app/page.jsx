@@ -1,3 +1,4 @@
+console.log("NEW VERSION 123");
 async function analyseFood() {
   if (!image) return;
 
